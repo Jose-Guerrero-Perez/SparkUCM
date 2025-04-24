@@ -2,7 +2,7 @@ Metadata-Version: 2.4
 Name: motor-ingesta
 Version: 0.1.0
 Summary: Motor de ingesta para el curso de Spark
-Home-page: https://github.com/nombrealumno
+Home-page: https://github.com/Jose-Guerrero-Perez/SparkUCM/
 Author: José Guerrero Pérez
 Author-email: josgue04@ucm.es
 Requires-Python: >=3.8

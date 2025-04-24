@@ -27,15 +27,7 @@ class FlujoDiario:
         :return:
         """
 
-        # raise NotImplementedError("completa el código de esta función")   # borra esta línea cuando resuelvas
         try:
-            # Procesamiento diario: crea un nuevo objeto motor de ingesta con self.config, invoca a ingesta_fichero,
-            # después a las funciones que añaden columnas adicionales, y finalmente guarda el DF en la tabla indicada en
-            # self.config["output_table"], que debe crearse como tabla manejada (gestionada), sin usar ningún path,
-            # siempre particionando por FlightDate. Tendrás que usar .write.option("path", ...).saveAsTable(...) para
-            # indicar que queremos crear una tabla externa en el momento de guardar.
-            # Conviene cachear el DF flights_df así como utilizar el número de particiones indicado en
-            # config["output_partitions"]
 
             motor_ingesta = MotorIngesta(self.config)
             flights_df = motor_ingesta.ingesta_fichero(data_file)
@@ -44,12 +36,6 @@ class FlujoDiario:
             flights_with_utc =   aniade_hora_utc(self.spark, flights_df)
 
 
-            # -----------------------------
-            #  CÓDIGO PARA EL EJERCICIO 4
-            # -----------------------------
-            # Paso 2. Para resolver el ejercicio 4 que arregla el intervalo faltante entre días,
-            # hay que leer de la tabla self.config["output_table"] la partición del día previo si existiera. Podemos
-            # obviar este código hasta llegar al ejercicio 4 del notebook
             dia_actual = flights_df.first().FlightDate
             dia_previo = dia_actual - timedelta(days=1)
             try:
@@ -60,10 +46,6 @@ class FlujoDiario:
                 flights_previo = None
 
             if flights_previo:
-                # añadir columnas a F.lit(None) haciendo cast al tipo adecuado de cada una, y unirlo con flights_previo.
-                # OJO: hacer select(flights_previo.columns) para tenerlas en el mismo orden antes de
-                # la unión, ya que la columna de partición se había ido al final al escribir
-
                 flights_with_utc = flights_with_utc \
                     .withColumn("FlightTime_next", F.lit(None).cast("timestamp")) \
                     .withColumn("Airline_next", F.lit(None).cast("string")) \
@@ -73,7 +55,6 @@ class FlujoDiario:
 
                 df_unido = flights_previo.unionByName(flights_with_utc)
 
-                # Spark no permite escribir en la misma tabla de la que estamos leyendo. Por eso salvamos
                 df_unido.write.mode("overwrite").saveAsTable("tabla_provisional")
                 df_unido = self.spark.read.table("tabla_provisional")
 
@@ -83,9 +64,6 @@ class FlujoDiario:
             # Paso 3. Invocamos al método para añadir información del vuelo siguiente
             df_with_next_flight = aniade_intervalos_por_aeropuerto(df_unido)
 
-            # Paso 4. Escribimos el DF en la tabla externa config["output_table"] con ubicación config["output_path"], con
-            # el número de particiones indicado en config["output_partitions"]
-            # df_with_next_flight.....(...)..write.mode("overwrite").option("partitionOverwriteMode", "dynamic")....
             df_with_next_flight \
                 .coalesce(self.config["output_partitions"]) \
                 .write\
@@ -106,6 +84,6 @@ class FlujoDiario:
 if __name__ == '__main__':
     spark = SparkSession.builder.getOrCreate()   # sólo si lo ejecutas localmente
     flujo = FlujoDiario(str(Path(__file__).parent.parent) + "/config/config.json")
-    flujo.procesa_diario("C:\\Users\\joseg\\Downloads\\flights_json\\landing\\2023-01-01.json")
+    flujo.procesa_diario(flujo.config["local"]["path_json_procesa_diario_main_flujo_diario"])
 
     # Recuerda que puedes crear el wheel ejecutando en la línea de comandos: python setup.py bdist_wheel

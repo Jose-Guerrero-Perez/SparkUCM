@@ -21,17 +21,6 @@ class MotorIngesta:
         :param json_path:
         :return:
         """
-        # Leemos el JSON como DF, tratando de inferir el esquema, y luego lo aplanamos.
-        # Por último nos quedamos con las columnas indicadas en el fichero de configuración,
-        # en la propiedad self.config["data_columns"], que es una lista de diccionarios. Debemos recorrer
-        # esa lista, seleccionando la columna y convirtiendo cada columna al tipo indicado en el fichero.
-
-        # PISTA: crear en lista_obj_column una lista de objetos Column como lista por comprensión a partir
-        # de self.config["data_columns"], y luego usar dicha lista como argumento de select(...). El DF resultante
-        # debe ser devuelto como resultado de la función.
-
-        # Para incluir también el campo "comment" como metadatos de la columna, podemos hacer:
-        # F.col(...).cast(...).alias(..., metadata={"comment": ...})
 
         flights_day_df = self.spark.read \
             .option("inferSchema", "true") \

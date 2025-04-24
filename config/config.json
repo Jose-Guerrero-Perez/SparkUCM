@@ -95,5 +95,11 @@
 
   "output_table": "default.flights",
   "output_partitions": 10,
-  "EXECUTION_ENVIRONMENT": "local"
+  "EXECUTION_ENVIRONMENT": "local",
+
+  "local": {
+    "path_json_procesa_diario_main_flujo_diario" : "C:/Users/joseg/Downloads/flights_json/landing/2023-01-01.json",
+    "json_file_day1": "C:/Users/joseg/Downloads/flights_json/landing/2023-01-01.json",
+    "json_file_day2": "C:/Users/joseg/Downloads/flights_json/landing/2023-01-02.json"
+  }
 }

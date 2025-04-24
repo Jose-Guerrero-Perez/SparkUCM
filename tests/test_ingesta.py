@@ -12,25 +12,16 @@ def test_aplana(spark):
     :param spark: SparkSession configurada localmente
     :return:
     """
-    # La variable spark es un fixture - un objeto que se crea automáticamente al arrancar todos los tests
-    # (consulta conftest.py)
-
-    # Definimos dos clases de tuplas asignando nombres a cada campo de la tupla.
-    # Las usaremos después para crear objetos
     tupla3 = namedtuple("tupla3", ["a1", "a2", "a3"])
     tupla2 = namedtuple("tupla2", ["b1", "b2"])
 
     test_df = spark.createDataFrame(
         [(tupla3("a", "b", "c"), "hola", 3, [tupla2("pepe", "juan"), tupla2("pepito", "juanito")])],
         ["tupla", "nombre", "edad", "amigos"]
-        # La columna tupla es un struct de 3 campos. La columna amigos es un array de structs, de 2 campos cada uno
     )
 
-    # Invocamos al método aplana_df de la clase MotorIngesta para aplanar el DF test_df
     aplanado_df = MotorIngesta.aplana_df(test_df)
 
-    # Comprobamos (assert) que cada una de las columnas a1, a2, a3, b1, b2, nombre, edad
-    # están incluidas en la lista de columns de aplanado_df. Las columnas "tupla" y "amigos" ya no deben existir
 
     assert(set(["a1", "a2", "a3", "nombre", "edad", "b1", "b2"]).issubset(set(aplanado_df.columns)))
     assert("tupla" not in aplanado_df.columns)
@@ -43,33 +34,22 @@ def test_ingesta_fichero(spark):
     :param spark: SparkSession inicializada localmente
     :return:
     """
-    ##################################################
-    #            EJERCICIO OPCIONAL
-    ##################################################
 
     carpeta_este_fichero = str(Path(__file__).parent)
     path_test_config = carpeta_este_fichero + "/resources/test_config.json"
     path_test_data = carpeta_este_fichero + "/resources/test_data.json"
 
-    # Leer el fichero test_config.json como diccionario con json.load(f)
     with open(path_test_config, 'r') as f:
         config = json.load(f)
 
-    # Crear un objeto motor de ingesta a partir del diccionario config
-    # motor_ingesta = ...
     motor_ingesta = MotorIngesta(config)
 
-    # Ingestar el fichero JSON de datos que hay en path_test_data mediante la variable motor_ingesta
-    # datos_df =
     datos_df = motor_ingesta.ingesta_fichero(path_test_data)
 
-    # Comprobar que los datos ingestados tienen una sola fila y las columnas nombre, parentesco, numero, profesion
     assert (datos_df.count() == 1)
     assert (set(["nombre", "parentesco", "numero", "profesion"]).issubset(set(datos_df.columns)))
-    assert (len(datos_df.columns) == 4) # comprobar que tiene 4 columnas y que nombre, parentesco, numero, profesion están incluidas
+    assert (len(datos_df.columns) == 4)
 
-
-    # primera_fila = ...    # extraer el objeto de la primera fila
     primera_fila = datos_df.first()
     assert (primera_fila["nombre"] == "Juan")
     assert (primera_fila["parentesco"] == "sobrino")
@@ -84,10 +64,6 @@ def test_aniade_intervalos_por_aeropuerto(spark):
     :return:
     """
 
-    ##################################################
-    #            EJERCICIO OPCIONAL
-    ##################################################
-
     test_df = spark.createDataFrame(
         [("JFK", "2023-12-25 15:35:00", "American_Airlines"),
          ("JFK", "2023-12-25 17:35:00", "Iberia")],
@@ -101,12 +77,11 @@ def test_aniade_intervalos_por_aeropuerto(spark):
     ).withColumn("FlightTime", F.col("FlightTime").cast("timestamp")) \
      .withColumn("FlightTime_next", F.col("FlightTime_next").cast("timestamp"))
 
-    expected_row = expected_df.first()         # extraer la primera fila de expected_df
+    expected_row = expected_df.first()
 
     result_df = aniade_intervalos_por_aeropuerto(test_df)
-    actual_row = result_df.first()         # extraer la primera fila de result_df
+    actual_row = result_df.first()
 
-    # Comparar los campos de ambos objetos Row
     assert (expected_row["Origin"] == actual_row["Origin"])
     assert (expected_row["FlightTime"] == actual_row["FlightTime"])
     assert (expected_row["Reporting_Airline"] == actual_row["Reporting_Airline"])
@@ -122,9 +97,6 @@ def test_aniade_hora_utc(spark):
     :param spark: SparkSession inicializada localmente
     :return:
     """
-    ##################################################
-    #            EJERCICIO OPCIONAL
-    ##################################################
 
     fichero_timezones = str(Path(__file__).parent) + "../motor_ingesta/resources/timezones.csv"
 
@@ -140,12 +112,11 @@ def test_aniade_hora_utc(spark):
                  F.to_utc_timestamp(F.col("FlightTimeLocal").cast("timestamp"), F.lit("America/New_York"))
                  ).select("Origin", "FlightDate", "DepTime", "FlightTime")
 
-    expected_row = expected_df.first()  # extraer la primera fila de expected_df
+    expected_row = expected_df.first()
 
     result_df = aniade_hora_utc(spark, test_df)
-    actual_row = result_df.first()  # extraer la primera fila de result_df
+    actual_row = result_df.first()
 
-    # Comparar los campos de ambos objetos Row
     assert(actual_row["Origin"] == expected_row["Origin"])
     assert(actual_row["FlightDate"] == expected_row["FlightDate"])
     assert(actual_row["DepTime"] == expected_row["DepTime"])
